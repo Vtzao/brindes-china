@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal de Materiais Comerciais – Catálogo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0b274a;--brand:#f3a300;--ink:#0f172a;--sub:#334155;--card:#ffffff;--muted:#f1f5f9;--radius:18px}
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:var(--ink)}
+    .hero{background:var(--bg);color:#fff;padding:42px 20px 56px} .wrap{max-width:1200px;margin:0 auto;display:flex;gap:16px;align-items:center}
+    .logo{height:100px} .title{font-size:clamp(22px,3vw,42px);font-weight:800}
+    .searchbar{display:flex;align-items:center;background:#fff;border-radius:999px;padding:10px 14px;gap:10px;margin-top: 10px;}
+    .searchbar input{border:0;outline:0;width:100%}
+    .toolbar{max-width:1200px;margin:12px auto 10px;display:flex;gap:10px;align-items:center;padding:0 20px}
+    .chip{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:8px 12px}
+    .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+    .btn-primary{background:var(--brand);color:#111827} .btn-light{background:#fff;border:1px solid #e5e7eb}
+    .grid{max-width:1200px;margin:16px auto 80px;display:grid;gap:16px;padding:0 20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 4px 18px rgba(2,6,23,.06);border:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;min-height:160px}
+    .thumb{display:grid;place-items:center;background:var(--muted);aspect-ratio:16/9} .thumb img{width:100%;height:100%;object-fit:contain}
+    .content{padding:14px;display:flex;flex-direction:column;gap:4px;flex:1}
+    .name{font-weight:800} .muted{color:var(--sub);font-size:12px}
+    .price{margin-top:4px;font-weight:800} .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .pill{background:var(--muted);border-radius:10px;padding:6px 8px;font-size:12px}
+
+    /* new actions area styling: center button + spacing */
+    .actions{display:flex;justify-content:center;padding:12px 14px 18px;background:transparent}
+    .actions .btn-primary{padding:13px 52px;border-radius:12px}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;place-items:center;z-index:50}
+    .modal{width:min(920px,96vw);max-height:92vh;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column}
+    .modal header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e5e7eb}
+    .modal main{display:flex;gap:18px;padding:18px;overflow:auto}
+    .left{flex:0 0 340px;display:flex;flex-direction:column;gap:12px}
+    .right{flex:1;display:flex;flex-direction:column;gap:12px}
+    .bigimg{background:var(--muted);border-radius:12px;display:grid;place-items:center;overflow:hidden;min-height:180px}
+    .kv-section{border-radius:12px;background:#fff;padding:10px;border:1px solid #eef2f7;box-shadow:0 6px 20px rgba(2,6,23,0.04)}
+    .kv-section h4{margin:0 0 8px;font-size:13px;color:var(--sub);font-weight:700}
+    .kv-rows{display:flex;flex-direction:column;gap:8px}
+    .kv-row{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .k{font-size:12px;color:var(--sub)} .v{font-weight:700}
+
+    .managers-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .managers-list{display:flex;flex-direction:column;gap:8px}
+    .manager-card{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;background:#fbfdff;border:1px solid #eef3fb;min-height:60px}
+    .manager-label{font-size:12px;color:var(--sub);font-weight:700;text-transform:uppercase}
+    .manager-value{font-size:15px;font-weight:800}
+
+    .modal footer{padding:12px 16px;border-top:1px solid #eef2f7;background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9));position:sticky;bottom:0}
+    .footer-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+
+    .hidden{display:none !important} .badge{background:#e2e8f0;border-radius:999px;padding:2px 8px;font-size:11px}
+    .spinner{width:18px;height:18px;border-radius:50%;border:3px solid #e2e8f0;border-top-color:var(--brand);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}} @media (max-width:900px){ .modal main{flex-direction:column} .managers-area{grid-template-columns:1fr} }
+
+    /* ---------- LIST VIEW STYLES ---------- */
+    /* grid when in list mode becomes single-column list */
+    .grid.list-mode { grid-template-columns: 1fr !important; gap: 12px; }
+
+    /* each card becomes horizontal row */
+    .grid.list-mode .card {
+      flex-direction: row;
+      align-items: stretch;
+      min-height: 112px;
+      gap: 0;
+    }
+    .grid.list-mode .thumb { flex: 0 0 200px; aspect-ratio: initial; height: 100%; border-radius: 0; display:block; }
+    .grid.list-mode .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .grid.list-mode .content { padding:12px 14px; display:flex; flex-direction:column; justify-content:center; gap:6px; }
+    .grid.list-mode .actions { padding:0 12px; align-items:center; display:flex; justify-content:flex-end; min-width:120px; }
+
+    /* make card corners softer in list view so it looks cohesive */
+    .grid.list-mode .card { border-radius:12px; }
+    /* responsive adjustments */
+    @media (max-width:700px) {
+      .grid.list-mode .thumb { display:none; }
+      .grid.list-mode .card { flex-direction:column; }
+    }
+    /* --------------------------------------- */
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="wrap">
+      <img class="logo" src="img/G_amarelo.pdf.webp" alt="Logo" />
+      <div>
+        <div class="title">Brindes Organnact</div>
+        <div class="searchbar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="#475569" stroke-width="2" stroke-linecap="round"/><circle cx="10.5" cy="10.5" r="7.5" stroke="#475569" stroke-width="2"/></svg>
+          <input id="search" placeholder="Pesquisar por nome ou código…" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="headerTopBar" class="app-topbar hidden">
+    <div class="wrap">
+      <div class="muted">Logado como: <strong id="userEmailSpan">—</strong></div>
+      <button id="logoutButton" class="btn btn-light">Sair</button>
+    </div>
+  </div>
+
+  <div id="loginPage" style="display:grid;place-items:center;min-height:40vh;padding:24px;">
+    <form id="loginForm" style="width:min(420px,95vw);background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;">
+      <h2 style="margin:0">Acessar catálogo</h2>
+      <label>Email<input id="emailInput" type="email" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;"></label>
+      <label>Senha<input id="passwordInput" type="password" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;"></label>
+      <button class="btn btn-primary" type="submit">Entrar</button>
+      <div class="muted" id="loginMessage"></div>
+      <a href="#" id="forgotPasswordLink" class="muted">Esqueci minha senha</a>
+    </form>
+
+    <form id="resetForm" class="hidden" style="width:min(420px,95vw);background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;">
+      <h2 style="margin:0">Recuperar senha</h2>
+      <label>Email<input id="resetEmailInput" type="email" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;"></label>
+      <button class="btn btn-primary" type="submit">Enviar link</button>
+      <div id="resetMessage" class="muted"></div>
+      <a href="#" id="backToLoginLink" class="muted">Voltar ao login</a>
+    </form>
+  </div>
+
+  <div id="appContent" class="hidden">
+    <div class="toolbar">
+      <span class="chip" id="lastSync">Sincronizado agora</span>
+      <button id="refresh" class="btn btn-light"><span class="spinner hidden" id="spin"></span> Atualizar</button>
+      <span id="viewToggle" class="chip" title="Alternar layout" style="cursor:pointer">Visão: <strong id="viewLabel">Grade</strong></span>
+      <div id="count" class="badge">0 itens</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="modal-backdrop" id="backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal" role="document">
+        <header>
+          <strong id="modalTitle">Detalhes do Produto</strong>
+          <button class="btn btn-light" id="closeModal">Fechar</button>
+        </header>
+
+        <main>
+          <div class="left">
+            <div class="bigimg"><img id="modalImg" alt="Imagem do item"></div>
+            <div class="kv-section">
+              <h4>INFORMAÇÕES</h4>
+              <div id="basicInfo" class="kv-rows"></div>
+            </div>
+          </div>
+
+          <div class="right">
+            <div>
+              <h3 id="modalName" style="margin:0 0 6px;font-size:18px"></h3>
+              <div class="price" id="modalPrice"></div>
+              <p class="muted" id="modalNote" style="margin:6px 0 14px"></p>
+            </div>
+
+            <div id="managersSection" class="kv-section">
+              <h4>PEDIDOS POR GERENTE / PROJETO</h4>
+              <div id="managersArea" class="managers-area">
+                <div id="managersCol" class="managers-list"></div>
+                <div id="projectsCol" class="managers-list"></div>
+              </div>
+              <div id="allocSummary" class="muted" style="margin-top:8px;font-weight:700"></div>
+            </div>
+
+            <div id="financeSection" class="kv-section">
+              <h4>TOTAL DO PEDIDO</h4>
+              <div id="financeRows" class="kv-rows"></div>
+            </div>
+
+            <div id="otherSection" class="kv-section">
+              <h4>OUTRAS INFORMAÇÕES</h4>
+              <div id="otherRows" class="kv-rows"></div>
+            </div>
+          </div>
+        </main>
+
+        <footer>
+          <div class="footer-actions">
+            <!-- edição removida conforme solicitado -->
+            <span id="saveStatus" class="muted"></span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+<script>
+;(function () {
+  // === CONFIG ===
+  var SHEET_URL_INPUT = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRMqGSY5244ZcSmRZ8kgGIrhlo6vMsQtmtZsMwp4oDnLXyoncEUFo6UHQIbfrmjqVg7ORSoeB-GKGOw/pubhtml";
+  var UPDATE_ENDPOINT = ''; // leitura somente
+
+  var FIELD_ALIASES = {
+    imagem:["imagem","img","image","foto","link","url","arquivo","imagem url","imagem item","imagem do item","link imagem","link da imagem"],
+    nome:["nome do item","nome","produto","item"],
+    codigo_interno:["código interno","codigo interno","sku","interno"],
+    codigo_fornecedor:["código fornecedor","codigo fornecedor","cod fornecedor","fornecedor"],
+    preco_us:["preço u$","preco u$","preco us","preço us","usd","preço usd","valor us"],
+    cotacao:["cotação do dolar","cotacao do dolar","cotacao","cotaçao","dolar","cotacao dolar","cotacao do dólar","cotacao_dolar"],
+    preco_rs:["preço estimado r$","preco estimado r$","preço r$","preco r$","brl","preco brl","preco_estimado","r$ estimado","r$ estimado","r$ estimado "],
+    detalhes:["detalhes","descrição","descricao","observações","observacoes","obs"]
+  };
+
+  var MANAGERS_FIXED = ['DIEGO - VET EXPERT','KAREN','ALEXANDRE','JEANE','ROSA','HALYSSON','NATHALIA','REGINA','NICHOLLE'];
+  var PROJECTS_FIXED = ['JORGE (LIVE FECHAMENTO)','MEDVEP','MEDVEP DIST','SITE','FECHAMENTO ANT. JEANE'];
+
+  var FINANCE_LABELS = {
+    pedido: ['PEDIDO','VOLUME TOTAL','VOLUME_TOTAL','VOLUME TOTAL (PCS)','VOLUME TOTAL (UN)','VOLUME'],
+    total_brl: ['TOTAL'],
+    site_fech_brl: ['APENAS SITE + FECHAMENTO'],
+    moq: ['MOQ','MINIMUM ORDER','MIN ORDER QTY','MIN QTY','MÍNIMO','MINIMO']
+  };
+
+  // DOM helpers
+  var byId = function(id){ return document.getElementById(id); };
+  var grid = byId('grid'), search = byId('search'), count = byId('count'), refreshBtn = byId('refresh'), spin = byId('spin'), lastSync = byId('lastSync');
+  var viewToggle = byId('viewToggle'), viewLabel = byId('viewLabel');
+  var backdrop = byId('backdrop'), closeModal = byId('closeModal'), modalImg = byId('modalImg'), modalName = byId('modalName'), modalPrice = byId('modalPrice'), modalNote = byId('modalNote');
+
+  // view mode: 'grid' or 'list' (persist in localStorage)
+  var STORAGE_KEY = 'catalogViewMode';
+  function getSavedView(){ try{ var v = localStorage.getItem(STORAGE_KEY); return v==='list' ? 'list' : 'grid'; }catch(e){return 'grid'; } }
+  function saveView(v){ try{ localStorage.setItem(STORAGE_KEY, v); }catch(e){} }
+
+  function applyViewMode(mode){
+    if(!grid) return;
+    if(mode === 'list'){
+      grid.classList.add('list-mode');
+      if(viewLabel) viewLabel.textContent = 'Lista';
+    } else {
+      grid.classList.remove('list-mode');
+      if(viewLabel) viewLabel.textContent = 'Grade';
+    }
+    saveView(mode);
+  }
+
+  // initialize view from storage
+  var INITIAL_VIEW = getSavedView();
+  applyViewMode(INITIAL_VIEW);
+
+  // attach toggle
+  if(viewToggle){
+    viewToggle.addEventListener('click', function(){
+      var current = grid.classList.contains('list-mode') ? 'list' : 'grid';
+      var next = (current === 'grid') ? 'list' : 'grid';
+      applyViewMode(next);
+      // re-render to ensure card structure matches (not strictly required here but safe)
+      render(window.__CATALOGO__ || []);
+    });
+  }
+
+  function strip(s){ return (s||'').toString().trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase(); }
+  function parseNumber(x){ if(x==null || x==='') return null; var s = String(x).replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,''); var n = Number(s); return Number.isFinite(n) ? n : null; }
+  function toBRL(x){ return x==null? '-' : x.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+  function toUSD(x){ return x==null? '-' : x.toLocaleString('en-US',{style:'currency',currency:'USD'}); }
+  function csvUrlFromPub(url){ try{ var u=new URL(url); return u.href.replace(/\/pubhtml(.*)$/,'/pub?output=csv'); }catch(e){ return url; } }
+
+  // limpeza/normalização (mantive as funções que você já usa)
+  function cleanCell(raw){
+    if(raw === undefined || raw === null) return '';
+    var s = String(raw).trim();
+    var m = s.match(/^\s*=?\s*IMAGE\s*\(\s*(['"]?)(.*?)\1\s*\)\s*$/i);
+    if(m && m[2]) { s = m[2].trim(); }
+    if(/^"(.*)"$/s.test(s)){
+      s = s.replace(/^"(.*)"$/s,'$1').replace(/""/g,'"');
+    }
+    s = s.replace(/^\s*=\s*/,'').trim();
+    return s;
+  }
+
+  function normalizeDriveImageUrl(url){
+    if(!url) return '';
+    try{
+      url = String(url).trim();
+      url = cleanCell(url);
+
+      if(url.includes("drive.google.com/file/d/")){
+        const match = url.match(/\/file\/d\/([^/]+)/);
+        if(match && match[1]){
+          const id = match[1];
+          return `https://drive.google.com/thumbnail?id=${id}`;
+        }
+      }
+
+      if(url.includes("drive.google.com/open")){
+        try{
+          const u = new URL(url);
+          const id = u.searchParams.get('id') || u.searchParams.get('file');
+          if(id) return `https://drive.google.com/thumbnail?id=${id}`;
+        }catch(e){}
+      }
+
+      if(/^[a-zA-Z0-9_-]{20,}$/.test(url)){
+        return `https://drive.google.com/thumbnail?id=${url}`;
+      }
+
+      if(/\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(url)) return url;
+
+      var matchThumb = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+      if(matchThumb && matchThumb[1]){
+        return `https://drive.google.com/thumbnail?id=${matchThumb[1]}`;
+      }
+
+      return url;
+    } catch(e){
+      console.warn("normalizeDriveImageUrl failed for", url, e);
+      return '';
+    }
+  }
+
+  function driveThumb(url,w){ 
+    if(!url) return url;
+    if(w==null) w=1200;
+    try{ 
+      var u = new URL(url);
+      if(u.hostname.indexOf('drive.google.com')>-1 && u.pathname==='/uc' && u.searchParams.get('id')){
+        u.searchParams.set('sz','w'+w);
+        return u.toString();
+      }
+    }catch(e){}
+    return url;
+  }
+
+  async function fetchCSV(url){ var res = await fetch(url,{cache:'no-store'}); if(!res.ok) throw new Error('Falha ao carregar a planilha'); return await res.text(); }
+
+  function csvToObjects(csv){
+    var rows = csv.split(/\r?\n/).filter(function(x){ return x !== undefined && x !== null && String(x).trim() !== ''; });
+    if(rows.length===0) return [];
+    var headersRaw = rows.shift().split(',');
+    var headers = headersRaw.map(function(h){ return strip(h); });
+    var keyMap = {};
+    for(var entry of Object.entries(FIELD_ALIASES)){
+      var logical = entry[0], aliases = entry[1];
+      var found = headers.findIndex(function(h){ return aliases.indexOf(h) > -1; });
+      if(found >= 0) keyMap[logical] = found;
+    }
+
+    var out = [];
+    rows.forEach(function(line, idx){
+      var cols = []; var cur=''; var inQ=false;
+      for(var i=0;i<line.length;i++){
+        var ch=line[i];
+        if(ch==='"'){ inQ=!inQ; continue; }
+        if(ch===',' && !inQ){ cols.push(cur); cur=''; continue; }
+        cur += ch;
+      }
+      cols.push(cur);
+
+      var obj = {};
+      obj.imagem = normalizeDriveImageUrl(cleanCell(cols[keyMap.imagem] || ''));
+      obj.nome = cleanCell(cols[keyMap.nome] || '');
+      obj.codigo_interno = cleanCell(cols[keyMap.codigo_interno] || '');
+      obj.codigo_fornecedor = cleanCell(cols[keyMap.codigo_fornecedor] || '');
+      obj.preco_us = parseNumber(cleanCell(cols[keyMap.preco_us]));
+      obj.cotacao = parseNumber(cleanCell(cols[keyMap.cotacao]));
+      obj.cotacao_raw = (cols[keyMap.cotacao] !== undefined ? cleanCell(cols[keyMap.cotacao]) : '');
+      obj.preco_rs = parseNumber(cleanCell(cols[keyMap.preco_rs]));
+      obj.preco_rs_raw = (cols[keyMap.preco_rs] !== undefined ? cleanCell(cols[keyMap.preco_rs]) : '');
+      obj.detalhes = cleanCell(cols[keyMap.detalhes] || '');
+      obj.__kv = (headersRaw || []).map(function(lab, idx2){ return [lab, cleanCell(cols[idx2] != null ? cols[idx2] : '')]; });
+      obj._raw = cols;
+      obj.__rowIndex = idx + 2;
+      out.push(obj);
+    });
+    return out;
+  }
+
+  function render(items){
+    var q = strip(search.value || '');
+    var filtered = items.filter(function(it){
+      var hay = strip([it.nome, it.codigo_interno, it.codigo_fornecedor].join(' '));
+      return hay.indexOf(q) > -1;
+    });
+
+    grid.innerHTML = '';
+    var isList = grid.classList.contains('list-mode');
+
+    filtered.forEach(function(it){
+      var card = document.createElement('article'); card.className = 'card';
+
+      if(isList){
+        // estrutura otimizada para lista (thumb + content + actions horizontally)
+        card.innerHTML =
+          '<div class="thumb">' + (it.imagem ? ('<img loading="lazy" src="'+it.imagem+'" alt="'+it.nome+'">') : '<span class="muted">Sem imagem</span>') + '</div>'
+          + '<div class="content">'
+          +   '<div class="name" title="'+it.nome+'">'+(it.nome||'—')+'</div>'
+          +   '<div class="muted">Cod. interno: <strong>'+(it.codigo_interno||'—')+'</strong></div>'
+          +   '<div class="muted">Cod. fornecedor: <strong>'+(it.codigo_fornecedor||'—')+'</strong></div>'
+          +   '<div class="price">'+toUSD(it.preco_us)+'</div>'
+          + '</div>'
+          + '<div class="actions"><button class="btn btn-primary">Mais detalhes</button></div>';
+      } else {
+        // estrutura para grade (vertical card)
+        card.innerHTML =
+          '<div class="thumb">' + (it.imagem ? ('<img loading="lazy" src="'+driveThumb(it.imagem,1200)+'" alt="'+it.nome+'">') : '<span class="muted">Sem imagem</span>') + '</div>'
+          + '<div class="content">'
+          +   '<div class="name" title="'+it.nome+'">'+(it.nome||'—')+'</div>'
+          +   '<div class="muted">Cod. interno: <strong>'+(it.codigo_interno||'—')+'</strong></div>'
+          +   '<div class="muted">Cod. fornecedor: <strong>'+(it.codigo_fornecedor||'—')+'</strong></div>'
+          +   '<div class="price">'+toUSD(it.preco_us)+'</div>'
+          +   '<div class="meta">'
+          +     '<div class="pill">USD: '+(it.preco_us!=null? it.preco_us.toLocaleString('pt-BR') : '—')+'</div>'
+          +     (function(){ var kv = it.__kv || []; var found = kv.find(function(pair){ return strip(pair[0])==='pedido'; }); if(found){ var qv = parseNumber(found[1]); if(qv!=null) return '<div class="pill">Pedido: '+qv.toLocaleString('pt-BR')+'</div>'; } return ''; })()
+          +   '</div>'
+          + '</div>'
+          + '<div class="actions"><button class="btn btn-primary">Mais detalhes</button></div>';
+      }
+
+      // bind event
+      (function(item){ card.querySelector('.btn-primary').addEventListener('click', function(){ openDetails(item); }); })(it);
+      grid.appendChild(card);
+    });
+    count.textContent = filtered.length + ' itens';
+  }
+
+  function getRawValueFromKv(item, aliases){
+    if(!item || !Array.isArray(item.__kv)) return '';
+    var normalizedAliases = (Array.isArray(aliases) ? aliases : [aliases]).map(strip);
+    for(var pair of item.__kv){
+      var key = strip(pair[0] || '');
+      if(normalizedAliases.indexOf(key) > -1) return pair[1];
+    }
+    for(var pair2 of item.__kv){
+      var key2 = strip(pair2[0] || '');
+      for(var a of normalizedAliases){
+        if(key2.indexOf(a) > -1) return pair2[1];
+      }
+    }
+    return '';
+  }
+
+  function kvGetAny(item, candidates){
+    if(!Array.isArray(item.__kv)) return '';
+    for(var c of candidates){
+      var found = item.__kv.find(function(p){ return strip(p[0]) === strip(c); });
+      if(found && String(found[1]).trim() !== '') return found[1];
+    }
+    return '';
+  }
+
+  async function openDetails(it){
+    if(!it) return;
+    if(modalImg) modalImg.src = it.imagem || '';
+    if(modalName) modalName.textContent = it.nome || '—';
+    if(modalPrice) modalPrice.textContent = toUSD(it.preco_us);
+    if(modalNote) modalNote.textContent = it.detalhes || '';
+
+    var basicInfoEl = document.getElementById('basicInfo'); if(basicInfoEl) basicInfoEl.innerHTML = '';
+    var cotacaoFromKv = getRawValueFromKv(it, FIELD_ALIASES.cotacao);
+    var precoRsFromKv = getRawValueFromKv(it, FIELD_ALIASES.preco_rs);
+    var cotacaoDisplay = (cotacaoFromKv && String(cotacaoFromKv).trim()!=='') ? cotacaoFromKv : (it.cotacao_raw || (it.cotacao!=null? String(it.cotacao) : ''));
+    var precoRsDisplay = (precoRsFromKv && String(precoRsFromKv).trim()!=='') ? precoRsFromKv : (it.preco_rs_raw || (it.preco_rs!=null? String(it.preco_rs) : ''));
+
+    var codigo_interno = getRawValueFromKv(it, FIELD_ALIASES.codigo_interno) || it.codigo_interno || '';
+    var codigo_fornecedor = getRawValueFromKv(it, FIELD_ALIASES.codigo_fornecedor) || it.codigo_fornecedor || '';
+    var moqVal = getRawValueFromKv(it, FINANCE_LABELS.moq) || '';
+    var taxasVal = kvGetAny(it, ['taxas','taxa','fee','fees','tax']) || '';
+    var distVal = kvGetAny(it, ['distribuidores','distribuidor','distribuidores (pcs)','distribuidores (un)']) || '';
+
+    var preco_us_display = (it.preco_us!=null) ? it.preco_us.toLocaleString('pt-BR') : (getRawValueFromKv(it, FIELD_ALIASES.preco_us) || '—');
+
+    var infoPairs = [
+      ['CÓDIGO INTERNO', codigo_interno || '—'],
+      ['CÓDIGO FORNECEDOR', codigo_fornecedor || '—'],
+      ['MOQ', moqVal || '—'],
+      ['PREÇO U$', preco_us_display || '—'],
+      ['COTAÇÃO DO DÓLAR', (cotacaoDisplay && String(cotacaoDisplay).trim()!=='') ? cotacaoDisplay : '—'],
+      ['TAXAS', taxasVal || '—'],
+      ['PREÇO ESTIMADO R$', (precoRsDisplay && String(precoRsDisplay).trim()!=='') ? precoRsDisplay : '—'],
+      ['DISTRIBUIDORES', distVal || '—']
+    ];
+    infoPairs.forEach(function(p){
+      var row = document.createElement('div'); row.className='kv-row';
+      var k = document.createElement('div'); k.className='k'; k.textContent = p[0];
+      var v = document.createElement('div'); v.className='v'; v.textContent = p[1];
+      row.appendChild(k); row.appendChild(v); basicInfoEl.appendChild(row);
+    });
+
+    var managersCol = document.getElementById('managersCol'), projectsCol = document.getElementById('projectsCol');
+    managersCol && (managersCol.innerHTML=''); projectsCol && (projectsCol.innerHTML='');
+    MANAGERS_FIXED.forEach(function(name){
+      var found = (it.__kv||[]).find(function(p){ return strip(p[0]) === strip(name); });
+      var displayVal = found ? (String(found[1]).trim()!=='' ? found[1] : '0') : '0';
+      var card = document.createElement('div'); card.className='manager-card';
+      var label = document.createElement('div'); label.className='manager-label'; label.textContent = name;
+      var value = document.createElement('div'); value.className='manager-value'; value.textContent = displayVal;
+      card.appendChild(label); card.appendChild(value); managersCol && managersCol.appendChild(card);
+    });
+    PROJECTS_FIXED.forEach(function(name){
+      var found = (it.__kv||[]).find(function(p){ return strip(p[0]) === strip(name); });
+      var displayVal = found ? (String(found[1]).trim()!=='' ? found[1] : '0') : '0';
+      var card = document.createElement('div'); card.className='manager-card';
+      var label = document.createElement('div'); label.className='manager-label'; label.textContent = name;
+      var value = document.createElement('div'); value.className='manager-value'; value.textContent = displayVal;
+      card.appendChild(label); card.appendChild(value); projectsCol && projectsCol.appendChild(card);
+    });
+
+    var financeRows = document.getElementById('financeRows'); if(financeRows) financeRows.innerHTML = '';
+    var pedido = (function(){ var f = (it.__kv||[]).find(function(p){ return strip(p[0])==='pedido' || FINANCE_LABELS.pedido.map(strip).indexOf(strip(p[0]))>-1; }); return f? f[1] : ''; })();
+    if(financeRows){
+      if(pedido){ var r = document.createElement('div'); r.className='kv-row'; r.innerHTML = '<div class="k">PEDIDO (VOLUME TOTAL)</div><div class="v">'+ (pedido || '—') +'</div>'; financeRows.appendChild(r); }
+      var totalBRL = (it.__kv||[]).find(function(p){ return FINANCE_LABELS.total_brl.map(strip).indexOf(strip(p[0]))>-1; });
+      if(totalBRL){ var rr = document.createElement('div'); rr.className='kv-row'; rr.innerHTML = '<div class="k">TOTAL</div><div class="v">'+ (totalBRL[1] || '—') +'</div>'; financeRows.appendChild(rr); }
+      var siteFech = (it.__kv||[]).find(function(p){ return FINANCE_LABELS.site_fech_brl.map(strip).indexOf(strip(p[0]))>-1; });
+      if(siteFech){ var r3 = document.createElement('div'); r3.className='kv-row'; r3.innerHTML = '<div class="k">APENAS SITE + FECHAMENTO</div><div class="v">'+ (siteFech[1] || '—') +'</div>'; financeRows.appendChild(r3); }
+    }
+
+    var otherRows = document.getElementById('otherRows'); if(otherRows) otherRows.innerHTML = '';
+    if(Array.isArray(it.__kv) && otherRows){
+      var shownCandidates = [].concat(MANAGERS_FIXED, PROJECTS_FIXED, [].concat.apply([], Object.values(FIELD_ALIASES)), [].concat.apply([], Object.values(FINANCE_LABELS))).map(strip);
+      var extraHidePatterns = ['cotacao','dolar','preco estimado','preco rs','preco r$','preco r','valor rs','r$','r$ estimado','cotacao do dolar'];
+
+      for(var kvp of it.__kv){
+        if(!kvp[1] || String(kvp[1]).trim()==='') continue;
+        var keyNorm = strip(kvp[0]);
+        if(shownCandidates.indexOf(keyNorm) > -1) continue;
+        var skip = extraHidePatterns.some(function(p){ return keyNorm.indexOf(p) > -1; });
+        if(skip) continue;
+        var row = document.createElement('div'); row.className='kv-row';
+        row.innerHTML = '<div class="k">'+kvp[0].toUpperCase()+'</div><div class="v">'+kvp[1]+'</div>';
+        otherRows.appendChild(row);
+      }
+    }
+
+    var allocSummaryEl = document.getElementById('allocSummary');
+    if(allocSummaryEl) allocSummaryEl.textContent = '';
+
+    if(backdrop) backdrop.style.display = 'grid';
+  }
+
+  function closeDetails(){ if(backdrop) backdrop.style.display = 'none'; }
+
+  async function load(){
+    try{
+      if(spin) spin.classList.remove('hidden');
+      var csvUrl = csvUrlFromPub(SHEET_URL_INPUT);
+      var csv = await fetchCSV(csvUrl);
+      var items = await csvToObjects(csv);
+      window.__CATALOGO__ = items;
+      render(items);
+      if(lastSync) lastSync.textContent = 'Sincronizado: ' + new Date().toLocaleString('pt-BR');
+    }catch(err){ alert('Erro ao carregar dados: '+ err.message); console.error(err); }
+    finally{ if(spin) spin.classList.add('hidden'); }
+  }
+
+  // eventos
+  if(refreshBtn) refreshBtn.addEventListener('click', load);
+  if(search) search.addEventListener('input', function(){ render(window.__CATALOGO__||[]); });
+  if(closeModal) closeModal.addEventListener('click', closeDetails);
+  if(backdrop) backdrop.addEventListener('click', function(e){ if(e.target===backdrop) closeDetails(); });
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDetails(); });
+
+  window.__LOAD_CATALOGO__ = load;
+
+  // não iniciamos load automático aqui para respeitar controle de autenticação já existente
+})();
+</script>
+
+  <!-- Firebase (unchanged) -->
+  <script type="module">
+    import { initializeApp as initializeFirebaseApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    const firebaseConfig = { apiKey: "AIzaSyDX6RKJZ6m7PIJEYErAy79Np0CrCXGYYbs", authDomain: "guia-rapido-organnact.firebaseapp.com", projectId: "guia-rapido-organnact", storageBucket: "guia-rapido-organnact.firebasestorage.app", messagingSenderId: "485598244510", appId: "1:485598244510:web:4054a6d7c3d703c6ec558f" };
+    const app = initializeFirebaseApp(firebaseConfig);
+    const auth = getAuth(app);
+    const loginPage = document.getElementById('loginPage');
+    const appContent = document.getElementById('appContent');
+    const headerTopBar = document.getElementById('headerTopBar');
+    const userEmailSpan = document.getElementById('userEmailSpan');
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const logoutButton = document.getElementById('logoutButton');
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    const backToLoginLink = document.getElementById('backToLoginLink');
+    const resetForm = document.getElementById('resetForm');
+    const resetEmailInput = document.getElementById('resetEmailInput');
+    const loginMessage = document.getElementById('loginMessage');
+    const resetMessage = document.getElementById('resetMessage');
+    function showApp(user){ loginPage?.classList.add('hidden'); appContent?.classList.remove('hidden'); headerTopBar?.classList.remove('hidden'); if(userEmailSpan) userEmailSpan.textContent = user?.email ?? '—'; if(window.__LOAD_CATALOGO__) window.__LOAD_CATALOGO__(); }
+    function showLogin(){ appContent?.classList.add('hidden'); headerTopBar?.classList.add('hidden'); loginPage?.classList.remove('hidden'); }
+    onAuthStateChanged(auth,(user)=>{ user?showApp(user):showLogin(); });
+    if(loginForm){
+      loginForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        if(loginMessage) loginMessage.textContent='';
+        try{ await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); }
+        catch{ if(loginMessage) loginMessage.textContent='Email ou senha incorretos.'; }
+      });
+    }
+    if(logoutButton) logoutButton.addEventListener('click', ()=>signOut(auth).catch(console.error));
+    if(forgotPasswordLink) forgotPasswordLink.addEventListener('click',(e)=>{ e.preventDefault(); loginForm?.classList.add('hidden'); resetForm?.classList.remove('hidden'); });
+    if(backToLoginLink) backToLoginLink.addEventListener('click',(e)=>{ e.preventDefault(); resetForm?.classList.add('hidden'); loginForm?.classList.remove('hidden'); });
+    if(resetForm){
+      resetForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        if(resetMessage) resetMessage.textContent='';
+        try{ await sendPasswordResetEmail(auth, resetEmailInput.value); if(resetMessage) resetMessage.textContent='Email de recuperação enviado! Verifique sua caixa de entrada.'; }
+        catch (error){ if(resetMessage) resetMessage.textContent=(error.code==='auth/user-not-found')?'Este email não está registrado.':'Ocorreu um erro. Tente novamente.'; }
+      });
+    }
+  </script>
+</body>
+</html>
