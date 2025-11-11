@@ -67,6 +67,38 @@
       transition: 600ms;
     }
 
+    .price {
+      /* Isso transforma o .price em um container */
+      display: flex;
+      padding-left: 10px;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: baseline; /* Alinha o preço (grande) e a tag (pequena) pela base */
+      margin-top: 4px;
+      /* O font-weight: 800; será movido para o .price-value */
+    }
+
+    .price-value {
+      /* Esta classe é para o texto do preço */
+            /* Esta é a nova tag de cotação */
+      border-radius: 10px;
+      padding: 6px 12px;
+      margin-right: 5px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #435774;
+    }
+
+    .cotacao-tag {
+      /* Esta é a nova tag de cotação */
+      background: var(--muted);
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 13px;
+      font-weight: 450;
+      color: var(--sub);
+    }
+
     /* default behavior: show full image (contain) */
     .thumb img{
       display:block;
@@ -527,28 +559,77 @@
     filtered.forEach(function(it){
       var card = document.createElement('article'); card.className = 'card';
 
+      // --- PRÉ-CÁLCULO DOS NOVOS VALORES ---
+      
+      // Get Cotação
+      var cotacaoVal = (function(){
+          var kv = it.__kv || []; 
+          var aliases = (FIELD_ALIASES.cotacao || []).map(strip);
+          var found = kv.find(function(pair){ return aliases.indexOf(strip(pair[0])) > -1; }); 
+          if(found && String(found[1]).trim() !== ''){ return found[1]; }
+          if(it.cotacao_raw && String(it.cotacao_raw).trim() !== ''){ return it.cotacao_raw; }
+          return null; // Retorna nulo se não achar
+      })();
+      
+      // Get MOQ
+      var moqVal = (function(){
+          var kv = it.__kv || []; 
+          var aliases = (FINANCE_LABELS.moq || []).map(strip);
+          var found = kv.find(function(pair){ return aliases.indexOf(strip(pair[0])) > -1; }); 
+          return (found && String(found[1]).trim() !== '') ? found[1] : null;
+      })();
+      
+      // Get Pedido
+      var pedidoVal = (function(){ 
+          var kv = it.__kv || []; 
+          var aliases = (FINANCE_LABELS.pedido || []).map(strip);
+          var found = kv.find(function(pair){ return aliases.indexOf(strip(pair[0])) > -1; }); 
+          if(found && String(found[1]).trim() !== ''){ var qv = parseNumber(found[1]); if(qv!=null) return qv.toLocaleString('pt-BR'); } 
+          return null;
+      })();
+      
+      // --- 🚀 MUDANÇA AQUI ---
+      // Criar a TAG de cotação (para ir ao lado do preço)
+      var cotacaoTag = cotacaoVal ? ('<span class="cotacao-tag">Cotação Dólar: '+cotacaoVal+'</span>') : '';
+      
+      // Criar as pílulas (APENAS MOQ E PEDIDO)
+      var moqPill = moqVal ? ('<div class="pill">MOQ: '+moqVal+'</div>') : '';
+      var pedidoPill = pedidoVal ? ('<div class="pill">Pedido: '+pedidoVal+'</div>') : '';
+      // --- FIM DA MUDANÇA ---
+
+
       if(isList){
+        // --- MODO LISTA (sem alteração aqui) ---
         card.innerHTML =
           '<div class="thumb">' + (it.imagem ? ('<img loading="lazy" src="'+it.imagem+'" alt="'+it.nome+'">') : '<span class="muted">Sem imagem</span>') + '</div>'
           + '<div class="content">'
           +   '<div class="name" title="'+it.nome+'">'+(it.nome||'—')+'</div>'
           +   '<div class="muted">Cod. interno: <strong>'+(it.codigo_interno||'—')+'</strong></div>'
           +   '<div class="muted">Cod. fornecedor: <strong>'+(it.codigo_fornecedor||'—')+'</strong></div>'
+          +   '<div class="muted">MOQ: <strong>'+ (moqVal || '—') +'</strong> | Pedido: <strong>'+ (pedidoVal || '—') +'</strong></div>'
           +   '<div class="price">'+toUSD(it.preco_us)+'</div>'
           + '</div>'
           + '<div class="actions"><button class="btn btn-primary">Mais detalhes</button></div>';
       } else {
+        // --- MODO GRADE (MODIFICADO) ---
         card.innerHTML =
           '<div class="thumb">' + (it.imagem ? ('<img loading="lazy" src="'+driveThumb(it.imagem,1200)+'" alt="'+it.nome+'">') : '<span class="muted">Sem imagem</span>') + '</div>'
           + '<div class="content">'
           +   '<div class="name" title="'+it.nome+'">'+(it.nome||'—')+'</div>'
           +   '<div class="muted">Cod. interno: <strong>'+(it.codigo_interno||'—')+'</strong></div>'
           +   '<div class="muted">Cod. fornecedor: <strong>'+(it.codigo_fornecedor||'—')+'</strong></div>'
-          +   '<div class="price">'+toUSD(it.preco_us)+'</div>'
-          +   '<div class="meta">'
-          +     '<div class="pill">USD: '+(it.preco_us!=null? it.preco_us.toLocaleString('pt-BR') : '—')+'</div>'
-          +     (function(){ var kv = it.__kv || []; var found = kv.find(function(pair){ return strip(pair[0])==='pedido'; }); if(found){ var qv = parseNumber(found[1]); if(qv!=null) return '<div class="pill">Pedido: '+qv.toLocaleString('pt-BR')+'</div>'; } return ''; })()
+          // --- 🚀 LINHA DO PREÇO MODIFICADA ---
+          +   '<div class="price">' // <-- Este é o container flex
+          +     '<span class="price-value">'+toUSD(it.preco_us)+'</span>' // <-- O preço
+          +     cotacaoTag // <-- A tag de cotação ao lado
           +   '</div>'
+          // --- SEÇÃO META MODIFICADA ---
+          +   '<div class="meta">'
+          //  (Cotação foi removida daqui)
+          +     moqPill
+          +     pedidoPill
+          +   '</div>'
+          // --- FIM DA MODIFICAÇÃO ---
           + '</div>'
           + '<div class="actions"><button class="btn btn-primary">Mais detalhes</button></div>';
       }
