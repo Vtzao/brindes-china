@@ -3,39 +3,114 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Portal de Materiais Comerciais – Catálogo</title>
+  <title>Catálogo de Brindes Organnact</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0b274a;--brand:#f3a300;--ink:#0f172a;--sub:#334155;--card:#ffffff;--muted:#f1f5f9;--radius:18px}
-    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:var(--ink)}
-    .hero{background:var(--bg);color:#fff;padding:42px 20px 56px} .wrap{max-width:1200px;margin:0 auto;display:flex;gap:16px;align-items:center}
-    .logo{height:100px} .title{font-size:clamp(22px,3vw,42px);font-weight:800}
-    .searchbar{display:flex;align-items:center;background:#fff;border-radius:999px;padding:10px 14px;gap:10px;margin-top: 10px;}
+    :root{
+      --bg:#0b274a; --brand:#f3a300; --ink:#0f172a; --sub:#334155;
+      --card:#ffffff; --muted:#f1f5f9; --radius:18px;
+      --transition-fast: 180ms;
+      --transition-med: 300ms;
+      --transition-slow: 420ms;
+      --easing: cubic-bezier(.2,.9,.25,1);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;color:var(--ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+    .hero{background:var(--bg);color:#fff;padding:42px 20px 56px}
+    .wrap{max-width:1200px;margin:0 auto;display:flex;gap:16px;align-items:center}
+    .logo{height:104px} .title{font-size:clamp(22px,3vw,42px);font-weight:800}
+    .searchbar{display:flex;align-items:center;background:#fff;border-radius:999px;padding:10px 14px;gap:10px}
     .searchbar input{border:0;outline:0;width:100%}
     .toolbar{max-width:1200px;margin:12px auto 10px;display:flex;gap:10px;align-items:center;padding:0 20px}
     .chip{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:8px 12px}
     .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
     .btn-primary{background:var(--brand);color:#111827} .btn-light{background:#fff;border:1px solid #e5e7eb}
-    .grid{max-width:1200px;margin:16px auto 80px;display:grid;gap:16px;padding:0 20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 4px 18px rgba(2,6,23,.06);border:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;min-height:160px}
-    .thumb{display:grid;place-items:center;background:var(--muted);aspect-ratio:16/9} .thumb img{width:100%;height:100%;object-fit:contain}
+
+    .grid{max-width:1200px;margin:16px auto 80px;display:grid;gap:16px;padding:0 20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));transition: grid-template-columns var(--transition-med) var(--easing), gap var(--transition-fast) var(--easing);}
+
+    .card{
+      background:var(--card);border-radius:var(--radius);
+      box-shadow:0 4px 18px rgba(2,6,23,.06);border:1px solid #e5e7eb;
+      display:flex;flex-direction:column;overflow:hidden;min-height:160px;
+      transition: transform var(--transition-fast) var(--easing), box-shadow var(--transition-fast) var(--easing), border-color var(--transition-fast) var(--easing);
+      will-change: transform;
+      cursor:default;
+      position:relative;
+    }
+
+    /* hover lift */
+    .card:hover{
+      transform: translateY(-6px);
+      box-shadow: 0 18px 36px rgba(2,6,23,.12);
+      border-color: rgba(0,0,0,0.04);
+    }
+
+    /* THUMB: container */
+    /* fundo da imagem alterado para branco (#ffffff) conforme solicitado */
+    .thumb{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#ffffff; /* <- changed to white */
+      aspect-ratio:16/9;
+      overflow:hidden;
+      padding:8px;
+    }
+
+    /* default behavior: show full image (contain) */
+    .thumb img{
+      display:block;
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:auto;
+      object-fit:contain;
+      transition: transform var(--transition-med) var(--easing), filter var(--transition-med) var(--easing);
+      will-change: transform, filter;
+      cursor:zoom-in; /* indicates click-to-expand */
+    }
+
+    /* slight zoom on hover but still contain (no crop) */
+    .card:hover .thumb img{
+      transform: scale(1.04);
+      filter: contrast(1.02) saturate(1.02);
+    }
+
     .content{padding:14px;display:flex;flex-direction:column;gap:4px;flex:1}
     .name{font-weight:800} .muted{color:var(--sub);font-size:12px}
     .price{margin-top:4px;font-weight:800} .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
     .pill{background:var(--muted);border-radius:10px;padding:6px 8px;font-size:12px}
 
-    /* new actions area styling: center button + spacing */
     .actions{display:flex;justify-content:center;padding:12px 14px 18px;background:transparent}
-    .actions .btn-primary{padding:13px 52px;border-radius:12px}
+    .actions .btn-primary{padding:8px 12px;border-radius:10px}
 
-    /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;place-items:center;z-index:50}
-    .modal{width:min(920px,96vw);max-height:92vh;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column}
+    /* Modal backdrop + modal with animations */
+    .modal-backdrop{
+      position:fixed;inset:0;display:none;place-items:center;z-index:50;
+      background:rgba(15,23,42,0); /* animated */
+      transition: background var(--transition-med) var(--easing), opacity var(--transition-med) var(--easing);
+      opacity:0;
+    }
+    .modal-backdrop.open{ display:grid; opacity:1; background: rgba(15,23,42,0.55); }
+
+    .modal{
+      width:min(920px,96vw);max-height:92vh;background:#fff;border-radius:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column;
+      transform: translateY(12px) scale(.98); opacity:0;
+      transition: transform var(--transition-med) var(--easing), opacity var(--transition-med) var(--easing);
+    }
+    .modal.open{ transform: translateY(0) scale(1); opacity:1; }
+
     .modal header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e5e7eb}
     .modal main{display:flex;gap:18px;padding:18px;overflow:auto}
     .left{flex:0 0 340px;display:flex;flex-direction:column;gap:12px}
     .right{flex:1;display:flex;flex-direction:column;gap:12px}
-    .bigimg{background:var(--muted);border-radius:12px;display:grid;place-items:center;overflow:hidden;min-height:180px}
+    /* big image background also set to white */
+    .bigimg{background:#ffffff;border-radius:12px;display:grid;place-items:center;overflow:hidden;min-height:180px}
+    .bigimg img{max-width:100%;max-height:60vh;object-fit:contain;display:block;transition: transform var(--transition-med) var(--easing); cursor:zoom-in;}
     .kv-section{border-radius:12px;background:#fff;padding:10px;border:1px solid #eef2f7;box-shadow:0 6px 20px rgba(2,6,23,0.04)}
     .kv-section h4{margin:0 0 8px;font-size:13px;color:var(--sub);font-weight:700}
     .kv-rows{display:flex;flex-direction:column;gap:8px}
@@ -55,30 +130,64 @@
     .spinner{width:18px;height:18px;border-radius:50%;border:3px solid #e2e8f0;border-top-color:var(--brand);animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}} @media (max-width:900px){ .modal main{flex-direction:column} .managers-area{grid-template-columns:1fr} }
 
-    /* ---------- LIST VIEW STYLES ---------- */
-    /* grid when in list mode becomes single-column list */
-    .grid.list-mode { grid-template-columns: 1fr !important; gap: 12px; }
-
-    /* each card becomes horizontal row */
-    .grid.list-mode .card {
-      flex-direction: row;
-      align-items: stretch;
-      min-height: 112px;
-      gap: 0;
+    /* ---------- LIST VIEW STYLES (images show entire) ---------- */
+    .grid.list-mode { grid-template-columns: 1fr !important; gap: 12px; transition: grid-template-columns var(--transition-med) var(--easing), gap var(--transition-fast) var(--easing); }
+    .grid.list-mode .card { flex-direction: row; align-items: stretch; min-height:112px; gap:0; transition: transform var(--transition-fast) var(--easing), box-shadow var(--transition-fast) var(--easing), border-color var(--transition-fast) var(--easing); }
+    .grid.list-mode .thumb {
+      flex: 0 0 200px;
+      aspect-ratio: initial;
+      height: 100%;
+      border-radius: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px;
+      background:#ffffff; /* ensure white in list mode too */
+      overflow:hidden;
     }
-    .grid.list-mode .thumb { flex: 0 0 200px; aspect-ratio: initial; height: 100%; border-radius: 0; display:block; }
-    .grid.list-mode .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .grid.list-mode .thumb img {
+      display:block;
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:auto;
+      object-fit:contain; /* IMPORTANT: contains instead of cover */
+      transition: transform var(--transition-med) var(--easing);
+      cursor:zoom-in;
+    }
     .grid.list-mode .content { padding:12px 14px; display:flex; flex-direction:column; justify-content:center; gap:6px; }
     .grid.list-mode .actions { padding:0 12px; align-items:center; display:flex; justify-content:flex-end; min-width:120px; }
-
-    /* make card corners softer in list view so it looks cohesive */
-    .grid.list-mode .card { border-radius:12px; }
-    /* responsive adjustments */
     @media (max-width:700px) {
       .grid.list-mode .thumb { display:none; }
       .grid.list-mode .card { flex-direction:column; }
     }
     /* --------------------------------------- */
+
+    /* view toggle hover */
+    #viewToggle { transition: transform var(--transition-fast) var(--easing); user-select:none; }
+    #viewToggle:hover { transform: translateY(-2px); }
+
+    .card:focus-within{ outline:2px solid rgba(243,163,0,0.15); outline-offset:2px; }
+
+    /* ------------ Lightbox (image expand) ------------ */
+    .image-lightbox{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:120;
+      background: rgba(15,23,42,0.9);
+      transition: opacity var(--transition-med) var(--easing);
+      opacity:0;
+      padding:20px;
+    }
+    .image-lightbox.open { display:flex; opacity:1; }
+    .image-lightbox .lb-inner{ max-width:calc(100% - 40px); max-height:calc(100% - 40px); display:grid; place-items:center; position:relative; }
+    .image-lightbox img{ max-width:100%; max-height:100%; object-fit:contain; display:block; border-radius:10px; }
+    .image-lightbox .close-btn{
+      position:absolute; top:-12px; right:-12px; width:40px; height:40px; border-radius:50%; background:#fff; border:0; cursor:pointer;
+      display:grid; place-items:center; box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    }
+    .image-lightbox .close-btn:active{ transform:scale(.98); }
+    /* keyboard focus */
+    .image-lightbox:focus { outline: none; }
+
   </style>
 </head>
 <body>
@@ -124,15 +233,15 @@
   <div id="appContent" class="hidden">
     <div class="toolbar">
       <span class="chip" id="lastSync">Sincronizado agora</span>
-      <button id="refresh" class="btn btn-light"><span class="spinner hidden" id="spin"></span> Atualizar</button>
       <span id="viewToggle" class="chip" title="Alternar layout" style="cursor:pointer">Visão: <strong id="viewLabel">Grade</strong></span>
+      <button id="refresh" class="btn btn-light"><span class="spinner hidden" id="spin"></span> Atualizar</button>
       <div id="count" class="badge">0 itens</div>
     </div>
 
     <div class="grid" id="grid"></div>
 
     <div class="modal-backdrop" id="backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal" role="document">
+      <div class="modal" id="modal" role="document" aria-hidden="true">
         <header>
           <strong id="modalTitle">Detalhes do Produto</strong>
           <button class="btn btn-light" id="closeModal">Fechar</button>
@@ -177,11 +286,18 @@
 
         <footer>
           <div class="footer-actions">
-            <!-- edição removida conforme solicitado -->
             <span id="saveStatus" class="muted"></span>
           </div>
         </footer>
       </div>
+    </div>
+  </div>
+
+  <!-- Lightbox (image expand) -->
+  <div id="lightbox" class="image-lightbox" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+    <div class="lb-inner" id="lbInner">
+      <button class="close-btn" id="lightboxClose" aria-label="Fechar imagem">✕</button>
+      <img id="lightboxImg" alt="Imagem ampliada">
     </div>
   </div>
 
@@ -216,7 +332,10 @@
   var byId = function(id){ return document.getElementById(id); };
   var grid = byId('grid'), search = byId('search'), count = byId('count'), refreshBtn = byId('refresh'), spin = byId('spin'), lastSync = byId('lastSync');
   var viewToggle = byId('viewToggle'), viewLabel = byId('viewLabel');
-  var backdrop = byId('backdrop'), closeModal = byId('closeModal'), modalImg = byId('modalImg'), modalName = byId('modalName'), modalPrice = byId('modalPrice'), modalNote = byId('modalNote');
+  var backdrop = byId('backdrop'), modalEl = byId('modal'), closeModal = byId('closeModal'), modalImg = byId('modalImg'), modalName = byId('modalName'), modalPrice = byId('modalPrice'), modalNote = byId('modalNote');
+
+  // lightbox elements
+  var lightbox = byId('lightbox'), lightboxImg = byId('lightboxImg'), lightboxClose = byId('lightboxClose'), lbInner = byId('lbInner');
 
   // view mode: 'grid' or 'list' (persist in localStorage)
   var STORAGE_KEY = 'catalogViewMode';
@@ -245,7 +364,6 @@
       var current = grid.classList.contains('list-mode') ? 'list' : 'grid';
       var next = (current === 'grid') ? 'list' : 'grid';
       applyViewMode(next);
-      // re-render to ensure card structure matches (not strictly required here but safe)
       render(window.__CATALOGO__ || []);
     });
   }
@@ -256,15 +374,13 @@
   function toUSD(x){ return x==null? '-' : x.toLocaleString('en-US',{style:'currency',currency:'USD'}); }
   function csvUrlFromPub(url){ try{ var u=new URL(url); return u.href.replace(/\/pubhtml(.*)$/,'/pub?output=csv'); }catch(e){ return url; } }
 
-  // limpeza/normalização (mantive as funções que você já usa)
+  // limpeza/normalização
   function cleanCell(raw){
     if(raw === undefined || raw === null) return '';
     var s = String(raw).trim();
     var m = s.match(/^\s*=?\s*IMAGE\s*\(\s*(['"]?)(.*?)\1\s*\)\s*$/i);
     if(m && m[2]) { s = m[2].trim(); }
-    if(/^"(.*)"$/s.test(s)){
-      s = s.replace(/^"(.*)"$/s,'$1').replace(/""/g,'"');
-    }
+    if(/^"(.*)"$/s.test(s)){ s = s.replace(/^"(.*)"$/s,'$1').replace(/""/g,'"'); }
     s = s.replace(/^\s*=\s*/,'').trim();
     return s;
   }
@@ -274,7 +390,6 @@
     try{
       url = String(url).trim();
       url = cleanCell(url);
-
       if(url.includes("drive.google.com/file/d/")){
         const match = url.match(/\/file\/d\/([^/]+)/);
         if(match && match[1]){
@@ -282,7 +397,6 @@
           return `https://drive.google.com/thumbnail?id=${id}`;
         }
       }
-
       if(url.includes("drive.google.com/open")){
         try{
           const u = new URL(url);
@@ -290,18 +404,12 @@
           if(id) return `https://drive.google.com/thumbnail?id=${id}`;
         }catch(e){}
       }
-
       if(/^[a-zA-Z0-9_-]{20,}$/.test(url)){
         return `https://drive.google.com/thumbnail?id=${url}`;
       }
-
       if(/\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(url)) return url;
-
       var matchThumb = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
-      if(matchThumb && matchThumb[1]){
-        return `https://drive.google.com/thumbnail?id=${matchThumb[1]}`;
-      }
-
+      if(matchThumb && matchThumb[1]){ return `https://drive.google.com/thumbnail?id=${matchThumb[1]}`; }
       return url;
     } catch(e){
       console.warn("normalizeDriveImageUrl failed for", url, e);
@@ -380,7 +488,6 @@
       var card = document.createElement('article'); card.className = 'card';
 
       if(isList){
-        // estrutura otimizada para lista (thumb + content + actions horizontally)
         card.innerHTML =
           '<div class="thumb">' + (it.imagem ? ('<img loading="lazy" src="'+it.imagem+'" alt="'+it.nome+'">') : '<span class="muted">Sem imagem</span>') + '</div>'
           + '<div class="content">'
@@ -391,7 +498,6 @@
           + '</div>'
           + '<div class="actions"><button class="btn btn-primary">Mais detalhes</button></div>';
       } else {
-        // estrutura para grade (vertical card)
         card.innerHTML =
           '<div class="thumb">' + (it.imagem ? ('<img loading="lazy" src="'+driveThumb(it.imagem,1200)+'" alt="'+it.nome+'">') : '<span class="muted">Sem imagem</span>') + '</div>'
           + '<div class="content">'
@@ -407,8 +513,29 @@
           + '<div class="actions"><button class="btn btn-primary">Mais detalhes</button></div>';
       }
 
-      // bind event
-      (function(item){ card.querySelector('.btn-primary').addEventListener('click', function(){ openDetails(item); }); })(it);
+      card.setAttribute('tabindex','0');
+
+      (function(item, el){ 
+        var btn = el.querySelector('.btn-primary');
+        btn.addEventListener('click', function(){ openDetails(item); });
+        el.addEventListener('keydown', function(e){ if(e.key==='Enter') openDetails(item); });
+
+        // add click-to-expand for image elements inside card
+        var img = el.querySelector('.thumb img');
+        if(img){
+          img.addEventListener('click', function(e){
+            e.stopPropagation();
+            // prefer original normalized URL if available (higher res)
+            var src = item.imagem || img.src || '';
+            openLightbox(src, item.nome || '');
+          });
+          // also keyboard accessible
+          img.setAttribute('role','button');
+          img.setAttribute('tabindex','0');
+          img.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); img.click(); } });
+        }
+      })(it, card);
+
       grid.appendChild(card);
     });
     count.textContent = filtered.length + ' itens';
@@ -439,7 +566,8 @@
     return '';
   }
 
-  async function openDetails(it){
+  var backdropTransitioning = false;
+  function openDetails(it){
     if(!it) return;
     if(modalImg) modalImg.src = it.imagem || '';
     if(modalName) modalName.textContent = it.nome || '—';
@@ -526,10 +654,95 @@
     var allocSummaryEl = document.getElementById('allocSummary');
     if(allocSummaryEl) allocSummaryEl.textContent = '';
 
-    if(backdrop) backdrop.style.display = 'grid';
+    // show backdrop & modal with animation
+    try {
+      if(backdrop){
+        backdrop.style.display = 'grid';
+        requestAnimationFrame(function(){
+          backdrop.classList.add('open');
+          modalEl.classList.add('open');
+          modalEl.setAttribute('aria-hidden','false');
+        });
+      } else {
+        if(modalEl){ modalEl.classList.add('open'); modalEl.setAttribute('aria-hidden','false'); }
+      }
+    } catch(e){ console.warn(e); }
+
+    // attach click-to-expand on modal image (so user can click the modal image too)
+    if(modalImg){
+      modalImg.onclick = function(e){
+        e.stopPropagation();
+        var src = modalImg.src || '';
+        openLightbox(src, it.nome || '');
+      };
+      modalImg.setAttribute('role','button');
+      modalImg.setAttribute('tabindex','0');
+      modalImg.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); modalImg.click(); } });
+    }
   }
 
-  function closeDetails(){ if(backdrop) backdrop.style.display = 'none'; }
+  function closeDetails(){
+    if(!backdrop && modalEl){
+      modalEl.classList.remove('open'); modalEl.setAttribute('aria-hidden','true'); return;
+    }
+    if(backdropTransitioning) return;
+    backdropTransitioning = true;
+    backdrop.classList.remove('open');
+    modalEl.classList.remove('open');
+    modalEl.setAttribute('aria-hidden','true');
+
+    var done = false;
+    function finish(){
+      if(done) return; done = true;
+      try{ backdrop.style.display = 'none'; }catch(e){}
+      backdropTransitioning = false;
+      backdrop.removeEventListener('transitionend', onEnd);
+    }
+    function onEnd(e){
+      if(e.propertyName === 'background' || e.propertyName === 'opacity'){
+        finish();
+      }
+    }
+    backdrop.addEventListener('transitionend', onEnd);
+    setTimeout(finish, 600);
+  }
+
+  if(closeModal) closeModal.addEventListener('click', closeDetails);
+  if(backdrop) backdrop.addEventListener('click', function(e){ if(e.target===backdrop) closeDetails(); });
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape') { closeDetails(); closeLightbox(); } });
+
+  // -------- Lightbox functions ----------
+  function openLightbox(src, alt){
+    if(!lightbox || !lightboxImg) return;
+    lightboxImg.src = src || '';
+    lightboxImg.alt = alt || 'Imagem ampliada';
+    lightbox.style.display = 'flex';
+    requestAnimationFrame(function(){
+      lightbox.classList.add('open');
+      lightbox.setAttribute('aria-hidden','false');
+      lightbox.focus && lightbox.focus();
+    });
+    // prevent body scroll while lightbox open
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    if(!lightbox) return;
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden','true');
+    setTimeout(function(){ lightbox.style.display = 'none'; }, 220);
+    document.body.style.overflow = '';
+    // clear src to free memory
+    if(lightboxImg) lightboxImg.src = '';
+  }
+
+  // close when clicking outside image inside lbInner (click on overlay)
+  if(lightbox){
+    lightbox.addEventListener('click', function(e){
+      if(e.target === lightbox || e.target === lbInner){ closeLightbox(); }
+    });
+    // close button
+    lightboxClose && lightboxClose.addEventListener('click', function(e){ e.stopPropagation(); closeLightbox(); });
+  }
 
   async function load(){
     try{
@@ -544,16 +757,10 @@
     finally{ if(spin) spin.classList.add('hidden'); }
   }
 
-  // eventos
   if(refreshBtn) refreshBtn.addEventListener('click', load);
   if(search) search.addEventListener('input', function(){ render(window.__CATALOGO__||[]); });
-  if(closeModal) closeModal.addEventListener('click', closeDetails);
-  if(backdrop) backdrop.addEventListener('click', function(e){ if(e.target===backdrop) closeDetails(); });
-  window.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDetails(); });
 
   window.__LOAD_CATALOGO__ = load;
-
-  // não iniciamos load automático aqui para respeitar controle de autenticação já existente
 })();
 </script>
 
@@ -582,23 +789,13 @@
     function showLogin(){ appContent?.classList.add('hidden'); headerTopBar?.classList.add('hidden'); loginPage?.classList.remove('hidden'); }
     onAuthStateChanged(auth,(user)=>{ user?showApp(user):showLogin(); });
     if(loginForm){
-      loginForm.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        if(loginMessage) loginMessage.textContent='';
-        try{ await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); }
-        catch{ if(loginMessage) loginMessage.textContent='Email ou senha incorretos.'; }
-      });
+      loginForm.addEventListener('submit', async (e)=>{ e.preventDefault(); if(loginMessage) loginMessage.textContent=''; try{ await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); } catch{ if(loginMessage) loginMessage.textContent='Email ou senha incorretos.'; } });
     }
     if(logoutButton) logoutButton.addEventListener('click', ()=>signOut(auth).catch(console.error));
     if(forgotPasswordLink) forgotPasswordLink.addEventListener('click',(e)=>{ e.preventDefault(); loginForm?.classList.add('hidden'); resetForm?.classList.remove('hidden'); });
     if(backToLoginLink) backToLoginLink.addEventListener('click',(e)=>{ e.preventDefault(); resetForm?.classList.add('hidden'); loginForm?.classList.remove('hidden'); });
     if(resetForm){
-      resetForm.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        if(resetMessage) resetMessage.textContent='';
-        try{ await sendPasswordResetEmail(auth, resetEmailInput.value); if(resetMessage) resetMessage.textContent='Email de recuperação enviado! Verifique sua caixa de entrada.'; }
-        catch (error){ if(resetMessage) resetMessage.textContent=(error.code==='auth/user-not-found')?'Este email não está registrado.':'Ocorreu um erro. Tente novamente.'; }
-      });
+      resetForm.addEventListener('submit', async (e)=>{ e.preventDefault(); if(resetMessage) resetMessage.textContent=''; try{ await sendPasswordResetEmail(auth, resetEmailInput.value); if(resetMessage) resetMessage.textContent='Email de recuperação enviado! Verifique sua caixa de entrada.'; } catch (error){ if(resetMessage) resetMessage.textContent=(error.code==='auth/user-not-found')?'Este email não está registrado.':'Ocorreu um erro. Tente novamente.'; } });
     }
   </script>
 </body>
