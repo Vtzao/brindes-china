@@ -28,6 +28,8 @@
     .chip{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:8px 12px}
     .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
     .btn-primary{background:var(--brand);color:#111827} .btn-light{background:#fff;border:1px solid #e5e7eb}
+    /* Adicionando botão de perigo/cancelar */
+    .btn-danger{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
 
     .grid{max-width:1200px;margin:16px auto 80px;display:grid;gap:16px;padding:0 20px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));transition: grid-template-columns var(--transition-med) var(--easing), gap var(--transition-fast) var(--easing);}
 
@@ -58,6 +60,11 @@
       aspect-ratio:16/9;
       overflow:hidden;
       padding:8px;
+    }
+
+    .btn-light:hover{
+      background-color: #d9dce0;
+      transition: 600ms;
     }
 
     /* default behavior: show full image (contain) */
@@ -112,7 +119,7 @@
     .bigimg{background:#ffffff;border-radius:12px;display:grid;place-items:center;overflow:hidden;min-height:180px}
     .bigimg img{max-width:100%;max-height:60vh;object-fit:contain;display:block;transition: transform var(--transition-med) var(--easing); cursor:zoom-in;}
     .kv-section{border-radius:12px;background:#fff;padding:10px;border:1px solid #eef2f7;box-shadow:0 6px 20px rgba(2,6,23,0.04)}
-    .kv-section h4{margin:0 0 8px;font-size:13px;color:var(--sub);font-weight:700}
+    .kv-section h4{margin:0 0 8px;font-size:13px;color:var(--sub);font-weight:700;display:flex;justify-content:space-between;align-items:center;}
     .kv-rows{display:flex;flex-direction:column;gap:8px}
     .kv-row{display:flex;gap:12px;align-items:center;justify-content:space-between}
     .k{font-size:12px;color:var(--sub)} .v{font-weight:700}
@@ -122,6 +129,14 @@
     .manager-card{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;background:#fbfdff;border:1px solid #eef3fb;min-height:60px}
     .manager-label{font-size:12px;color:var(--sub);font-weight:700;text-transform:uppercase}
     .manager-value{font-size:15px;font-weight:800}
+
+    /* Estilos para o modo de edição */
+    .manager-input {
+      font-size: 15px; font-weight: 800; width: 100%; border: 1px solid var(--brand);
+      border-radius: 6px; padding: 4px 6px; outline-color: var(--brand);
+    }
+    .manager-value.hidden { display: none; }
+    .manager-input.hidden { display: none; }
 
     .modal footer{padding:12px 16px;border-top:1px solid #eef2f7;background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9));position:sticky;bottom:0}
     .footer-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center}
@@ -264,7 +279,10 @@
             </div>
 
             <div id="managersSection" class="kv-section">
-              <h4>PEDIDOS POR GERENTE / PROJETO</h4>
+              <h4>
+                <span>PEDIDOS POR GERENTE / PROJETO</span>
+                <button id="editOrdersBtn" class="btn btn-light" style="padding: 10px 15px; font-size: 13px;">Editar</button>
+              </h4>
               <div id="managersArea" class="managers-area">
                 <div id="managersCol" class="managers-list"></div>
                 <div id="projectsCol" class="managers-list"></div>
@@ -287,13 +305,16 @@
         <footer>
           <div class="footer-actions">
             <span id="saveStatus" class="muted"></span>
+            <button id="cancelEditBtn" class="btn btn-danger hidden" style="padding: 8px 12px;">Cancelar</button>
+            <button id="saveEditBtn" class="btn btn-primary hidden" style="padding: 8px 12px;">
+              <span class="spinner hidden" id="saveSpinner"></span> Salvar
+            </button>
           </div>
         </footer>
       </div>
     </div>
   </div>
 
-  <!-- Lightbox (image expand) -->
   <div id="lightbox" class="image-lightbox" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
     <div class="lb-inner" id="lbInner">
       <button class="close-btn" id="lightboxClose" aria-label="Fechar imagem">✕</button>
@@ -305,7 +326,10 @@
 ;(function () {
   // === CONFIG ===
   var SHEET_URL_INPUT = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRMqGSY5244ZcSmRZ8kgGIrhlo6vMsQtmtZsMwp4oDnLXyoncEUFo6UHQIbfrmjqVg7ORSoeB-GKGOw/pubhtml";
-  var UPDATE_ENDPOINT = ''; // leitura somente
+  
+  // !!! IMPORTANTE !!!
+  // Cole aqui a URL do seu Google Apps Script (veja a Parte 2 abaixo)
+  var UPDATE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzZ2wFJ2N8adT4eDxT4UgI3H0IqhqtMoBDgmm_OrHhGoHzLMT6cbooW0LGnUjlNzIbH/exec'; // <--- DEIXE EM BRANCO POR ENQUANTO
 
   var FIELD_ALIASES = {
     imagem:["imagem","img","image","foto","link","url","arquivo","imagem url","imagem item","imagem do item","link imagem","link da imagem"],
@@ -334,8 +358,16 @@
   var viewToggle = byId('viewToggle'), viewLabel = byId('viewLabel');
   var backdrop = byId('backdrop'), modalEl = byId('modal'), closeModal = byId('closeModal'), modalImg = byId('modalImg'), modalName = byId('modalName'), modalPrice = byId('modalPrice'), modalNote = byId('modalNote');
 
+  // Novos botões do modal
+  var editOrdersBtn = byId('editOrdersBtn'), saveEditBtn = byId('saveEditBtn'), cancelEditBtn = byId('cancelEditBtn');
+  var saveSpinner = byId('saveSpinner'), saveStatus = byId('saveStatus');
+
   // lightbox elements
   var lightbox = byId('lightbox'), lightboxImg = byId('lightboxImg'), lightboxClose = byId('lightboxClose'), lbInner = byId('lbInner');
+
+  // Armazena o item que está aberto no modal
+  var __CURRENT_ITEM__ = null;
+  var __IS_EDIT_MODE__ = false;
 
   // view mode: 'grid' or 'list' (persist in localStorage)
   var STORAGE_KEY = 'catalogViewMode';
@@ -466,9 +498,17 @@
       obj.preco_rs = parseNumber(cleanCell(cols[keyMap.preco_rs]));
       obj.preco_rs_raw = (cols[keyMap.preco_rs] !== undefined ? cleanCell(cols[keyMap.preco_rs]) : '');
       obj.detalhes = cleanCell(cols[keyMap.detalhes] || '');
-      obj.__kv = (headersRaw || []).map(function(lab, idx2){ return [lab, cleanCell(cols[idx2] != null ? cols[idx2] : '')]; });
+      
+      // Mapeia TODOS os cabeçalhos brutos para seus valores
+      obj.__kv = (headersRaw || []).map(function(lab, idx2){ 
+        return [
+          lab, // Chave (nome da coluna, ex: "KAREN")
+          cleanCell(cols[idx2] != null ? cols[idx2] : '') // Valor
+        ]; 
+      });
+
       obj._raw = cols;
-      obj.__rowIndex = idx + 2;
+      obj.__rowIndex = idx + 2; // Salva o número da linha da planilha (importante!)
       out.push(obj);
     });
     return out;
@@ -567,12 +607,26 @@
   }
 
   var backdropTransitioning = false;
+
+  // *** FUNÇÃO MODIFICADA ***
   function openDetails(it){
     if(!it) return;
+    __CURRENT_ITEM__ = it; // Armazena o item atual globalmente (para o modal)
+    __IS_EDIT_MODE__ = false; // Reseta o modo de edição
+
     if(modalImg) modalImg.src = it.imagem || '';
     if(modalName) modalName.textContent = it.nome || '—';
     if(modalPrice) modalPrice.textContent = toUSD(it.preco_us);
     if(modalNote) modalNote.textContent = it.detalhes || '';
+
+    // Limpa o status de salvamento
+    if(saveStatus) saveStatus.textContent = '';
+    
+    // Reseta os botões de edição
+    if(editOrdersBtn) editOrdersBtn.classList.remove('hidden');
+    if(saveEditBtn) saveEditBtn.classList.add('hidden');
+    if(cancelEditBtn) cancelEditBtn.classList.add('hidden');
+    if(saveSpinner) saveSpinner.classList.add('hidden');
 
     var basicInfoEl = document.getElementById('basicInfo'); if(basicInfoEl) basicInfoEl.innerHTML = '';
     var cotacaoFromKv = getRawValueFromKv(it, FIELD_ALIASES.cotacao);
@@ -605,24 +659,8 @@
       row.appendChild(k); row.appendChild(v); basicInfoEl.appendChild(row);
     });
 
-    var managersCol = document.getElementById('managersCol'), projectsCol = document.getElementById('projectsCol');
-    managersCol && (managersCol.innerHTML=''); projectsCol && (projectsCol.innerHTML='');
-    MANAGERS_FIXED.forEach(function(name){
-      var found = (it.__kv||[]).find(function(p){ return strip(p[0]) === strip(name); });
-      var displayVal = found ? (String(found[1]).trim()!=='' ? found[1] : '0') : '0';
-      var card = document.createElement('div'); card.className='manager-card';
-      var label = document.createElement('div'); label.className='manager-label'; label.textContent = name;
-      var value = document.createElement('div'); value.className='manager-value'; value.textContent = displayVal;
-      card.appendChild(label); card.appendChild(value); managersCol && managersCol.appendChild(card);
-    });
-    PROJECTS_FIXED.forEach(function(name){
-      var found = (it.__kv||[]).find(function(p){ return strip(p[0]) === strip(name); });
-      var displayVal = found ? (String(found[1]).trim()!=='' ? found[1] : '0') : '0';
-      var card = document.createElement('div'); card.className='manager-card';
-      var label = document.createElement('div'); label.className='manager-label'; label.textContent = name;
-      var value = document.createElement('div'); value.className='manager-value'; value.textContent = displayVal;
-      card.appendChild(label); card.appendChild(value); projectsCol && projectsCol.appendChild(card);
-    });
+    // Renderiza os cards de Gerentes e Projetos
+    renderManagerCards(it);
 
     var financeRows = document.getElementById('financeRows'); if(financeRows) financeRows.innerHTML = '';
     var pedido = (function(){ var f = (it.__kv||[]).find(function(p){ return strip(p[0])==='pedido' || FINANCE_LABELS.pedido.map(strip).indexOf(strip(p[0]))>-1; }); return f? f[1] : ''; })();
@@ -681,7 +719,13 @@
     }
   }
 
+  // *** FUNÇÃO MODIFICADA ***
   function closeDetails(){
+    // Se estiver em modo de edição, cancela antes de fechar
+    if(__IS_EDIT_MODE__){
+      toggleEditMode(false);
+    }
+    
     if(!backdrop && modalEl){
       modalEl.classList.remove('open'); modalEl.setAttribute('aria-hidden','true'); return;
     }
@@ -690,6 +734,7 @@
     backdrop.classList.remove('open');
     modalEl.classList.remove('open');
     modalEl.setAttribute('aria-hidden','true');
+    __CURRENT_ITEM__ = null; // Limpa o item atual
 
     var done = false;
     function finish(){
@@ -707,9 +752,208 @@
     setTimeout(finish, 600);
   }
 
+  // --- 🚀 NOVAS FUNÇÕES PARA EDIÇÃO 🚀 ---
+
+  // Função para popular os cards de Gerente/Projeto
+  function renderManagerCards(it) {
+    var managersCol = document.getElementById('managersCol'), projectsCol = document.getElementById('projectsCol');
+    managersCol && (managersCol.innerHTML=''); projectsCol && (projectsCol.innerHTML='');
+    
+    var makeCard = function(name){
+      var found = (it.__kv||[]).find(function(p){ return strip(p[0]) === strip(name); });
+      var displayVal = found ? (String(found[1]).trim()!=='' ? found[1] : '0') : '0';
+      
+      var card = document.createElement('div'); 
+      card.className='manager-card';
+      // Armazena o nome da coluna (ex: "KAREN") no próprio elemento
+      card.dataset.key = name; 
+
+      var label = document.createElement('div'); 
+      label.className='manager-label'; 
+      label.textContent = name;
+      
+      // Div para mostrar o valor (visível no modo normal)
+      var valueDiv = document.createElement('div'); 
+      valueDiv.className='manager-value'; 
+      valueDiv.textContent = displayVal;
+
+      // Input para editar o valor (visível no modo edição)
+      var valueInput = document.createElement('input');
+      valueInput.type = 'number';
+      valueInput.className = 'manager-input hidden'; // Começa oculto
+      valueInput.value = parseNumber(displayVal) || 0;
+      valueInput.dataset.originalValue = parseNumber(displayVal) || 0; // Salva o valor original
+
+      card.appendChild(label); 
+      card.appendChild(valueDiv);
+      card.appendChild(valueInput);
+      return card;
+    };
+
+    MANAGERS_FIXED.forEach(function(name){
+      managersCol && managersCol.appendChild(makeCard(name));
+    });
+    PROJECTS_FIXED.forEach(function(name){
+      projectsCol && projectsCol.appendChild(makeCard(name));
+    });
+  }
+
+  // Controla a troca entre ver e editar
+  function toggleEditMode(isEditing) {
+    __IS_EDIT_MODE__ = isEditing;
+    var cards = modalEl.querySelectorAll('.manager-card');
+    
+    cards.forEach(function(card){
+      var div = card.querySelector('.manager-value');
+      var input = card.querySelector('.manager-input');
+      
+      if(isEditing){
+        // Entrando no modo de edição
+        var currentVal = parseNumber(div.textContent) || 0;
+        input.value = currentVal; // Seta o valor atual no input
+        input.dataset.originalValue = currentVal; // Salva o valor original
+        div.classList.add('hidden');
+        input.classList.remove('hidden');
+      } else {
+        // Saindo do modo de edição (cancelar)
+        div.classList.remove('hidden');
+        input.classList.add('hidden');
+        // Opcional: reverter o texto do div para o original (se não for salvar)
+        // div.textContent = input.dataset.originalValue; 
+      }
+    });
+
+    // Troca os botões
+    if(editOrdersBtn) editOrdersBtn.classList.toggle('hidden', isEditing);
+    if(saveEditBtn) saveEditBtn.classList.toggle('hidden', !isEditing);
+    if(cancelEditBtn) cancelEditBtn.classList.toggle('hidden', !isEditing);
+    if(saveStatus) saveStatus.textContent = '';
+  }
+
+  // Função para salvar os dados
+  async function saveManagerUpdates() {
+    if(!UPDATE_ENDPOINT || UPDATE_ENDPOINT.trim() === '') {
+      alert('ERRO: O endpoint de atualização (UPDATE_ENDPOINT) não foi configurado no script.');
+      return;
+    }
+    if(!__CURRENT_ITEM__) {
+      alert('Erro: Item atual não encontrado.');
+      return;
+    }
+
+    // 1. Mostrar loading
+    if(saveSpinner) saveSpinner.classList.remove('hidden');
+    if(saveEditBtn) saveEditBtn.disabled = true;
+    if(cancelEditBtn) cancelEditBtn.disabled = true;
+    if(saveStatus) saveStatus.textContent = 'Salvando...';
+
+    // 2. Coletar dados dos inputs
+    var updates = {};
+    var cards = modalEl.querySelectorAll('.manager-card');
+    cards.forEach(function(card){
+      var key = card.dataset.key; // "KAREN", "MEDVEP", etc.
+      var input = card.querySelector('.manager-input');
+      var newValue = input.value;
+      var originalValue = input.dataset.originalValue;
+
+      // Só envia se o valor mudou
+      if(String(newValue) !== String(originalValue)) {
+        updates[key] = newValue;
+      }
+    });
+
+    // Se nada mudou, não faz nada
+    if(Object.keys(updates).length === 0) {
+      if(saveSpinner) saveSpinner.classList.add('hidden');
+      if(saveEditBtn) saveEditBtn.disabled = false;
+      if(cancelEditBtn) cancelEditBtn.disabled = false;
+      if(saveStatus) saveStatus.textContent = 'Nenhuma alteração detectada.';
+      toggleEditMode(false); // Volta ao modo de visualização
+      return;
+    }
+
+    // 3. Montar o payload
+    var payload = {
+      rowIndex: __CURRENT_ITEM__.__rowIndex, // O número da linha na planilha
+      userEmail: window.__CURRENT_USER_EMAIL__ || 'unknown', // Email do usuário logado
+      updates: updates // Objeto com { "KAREN": 10, "MEDVEP": 5 }
+    };
+
+    // 4. Enviar para o Google Apps Script
+    try {
+      var response = await fetch(UPDATE_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors', // Importante se o Apps Script não estiver configurado para CORS
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        // Redirecionamento é necessário para Apps Script anônimos
+        redirect: 'follow' 
+      });
+      
+      // NOTA: Com 'no-cors', não podemos ler a resposta. 
+      // Assumimos sucesso se a requisição não der erro.
+      // Para um feedback real (ex: `response.json()`), o Apps Script precisa
+      // ser configurado corretamente para CORS, o que é mais complexo.
+
+      // 5. Sucesso (assumido)
+      if(saveStatus) saveStatus.textContent = 'Salvo com sucesso!';
+      
+      // Atualiza os dados locais (__CURRENT_ITEM__) para refletir a mudança
+      for(var key in updates) {
+        var kvPair = __CURRENT_ITEM__.__kv.find(function(p){ return strip(p[0]) === strip(key); });
+        if(kvPair) {
+          kvPair[1] = updates[key]; // Atualiza o valor
+        } else {
+          // Se não existia, adiciona (improvável para este caso)
+          __CURRENT_ITEM__.__kv.push([key, updates[key]]);
+        }
+      }
+      
+      // Atualiza os dados locais em __CATALOGO__ também
+      var itemInCatalog = (window.__CATALOGO__ || []).find(function(it){
+        return it.__rowIndex === __CURRENT_ITEM__.__rowIndex;
+      });
+      if(itemInCatalog) {
+        itemInCatalog.__kv = __CURRENT_ITEM__.__kv;
+      }
+
+      // Re-renderiza os cards com os novos valores e sai do modo de edição
+      renderManagerCards(__CURRENT_ITEM__);
+      toggleEditMode(false);
+
+    } catch (error) {
+      // 6. Erro
+      console.error('Erro ao salvar:', error);
+      if(saveStatus) saveStatus.textContent = 'Erro ao salvar. Tente novamente.';
+      alert('Falha ao salvar. Verifique o console para detalhes.');
+    } finally {
+      // 7. Limpar loading
+      if(saveSpinner) saveSpinner.classList.add('hidden');
+      if(saveEditBtn) saveEditBtn.disabled = false;
+      if(cancelEditBtn) cancelEditBtn.disabled = false;
+      setTimeout(function(){ if(saveStatus) saveStatus.textContent = ''; }, 3000);
+    }
+  }
+
+  // --- Fim das novas funções ---
+
+
   if(closeModal) closeModal.addEventListener('click', closeDetails);
   if(backdrop) backdrop.addEventListener('click', function(e){ if(e.target===backdrop) closeDetails(); });
   window.addEventListener('keydown', function(e){ if(e.key==='Escape') { closeDetails(); closeLightbox(); } });
+
+  // Adiciona listeners aos novos botões
+  if(editOrdersBtn) editOrdersBtn.addEventListener('click', function(){ toggleEditMode(true); });
+  if(cancelEditBtn) cancelEditBtn.addEventListener('click', function(){ 
+    // Re-renderiza os cards com os dados originais
+    renderManagerCards(__CURRENT_ITEM__);
+    toggleEditMode(false); 
+  });
+  if(saveEditBtn) saveEditBtn.addEventListener('click', saveManagerUpdates);
+
 
   // -------- Lightbox functions ----------
   function openLightbox(src, alt){
@@ -764,7 +1008,6 @@
 })();
 </script>
 
-  <!-- Firebase (unchanged) -->
   <script type="module">
     import { initializeApp as initializeFirebaseApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -785,9 +1028,27 @@
     const resetEmailInput = document.getElementById('resetEmailInput');
     const loginMessage = document.getElementById('loginMessage');
     const resetMessage = document.getElementById('resetMessage');
-    function showApp(user){ loginPage?.classList.add('hidden'); appContent?.classList.remove('hidden'); headerTopBar?.classList.remove('hidden'); if(userEmailSpan) userEmailSpan.textContent = user?.email ?? '—'; if(window.__LOAD_CATALOGO__) window.__LOAD_CATALOGO__(); }
-    function showLogin(){ appContent?.classList.add('hidden'); headerTopBar?.classList.add('hidden'); loginPage?.classList.remove('hidden'); }
+    
+    // Variável global para email do usuário
+    window.__CURRENT_USER_EMAIL__ = null; 
+
+    function showApp(user){ 
+      loginPage?.classList.add('hidden'); 
+      appContent?.classList.remove('hidden'); 
+      headerTopBar?.classList.remove('hidden'); 
+      if(userEmailSpan) userEmailSpan.textContent = user?.email ?? '—'; 
+      window.__CURRENT_USER_EMAIL__ = user?.email; // Salva o email
+      if(window.__LOAD_CATALOGO__) window.__LOAD_CATALOGO__(); 
+    }
+    function showLogin(){ 
+      appContent?.classList.add('hidden'); 
+      headerTopBar?.classList.add('hidden'); 
+      loginPage?.classList.remove('hidden'); 
+      window.__CURRENT_USER_EMAIL__ = null; // Limpa o email
+    }
+    
     onAuthStateChanged(auth,(user)=>{ user?showApp(user):showLogin(); });
+    
     if(loginForm){
       loginForm.addEventListener('submit', async (e)=>{ e.preventDefault(); if(loginMessage) loginMessage.textContent=''; try{ await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); } catch{ if(loginMessage) loginMessage.textContent='Email ou senha incorretos.'; } });
     }
